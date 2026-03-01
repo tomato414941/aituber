@@ -1,4 +1,6 @@
-export class VoicevoxService {
+import type { TtsService } from './tts.js'
+
+export class VoicevoxService implements TtsService {
   private baseUrl: string
   private speaker: number
 

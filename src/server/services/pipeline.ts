@@ -1,19 +1,19 @@
 import { EventEmitter } from 'events'
 import { ClaudeService } from './claude.js'
-import { VoicevoxService } from './voicevox.js'
+import type { TtsService } from './tts.js'
 import { ChatQueue } from '../queue/chat-queue.js'
 import type { SpeechEvent } from '../../shared/types.js'
 
 export class Pipeline extends EventEmitter {
   private claude: ClaudeService
-  private voicevox: VoicevoxService
+  private tts: TtsService
   private queue: ChatQueue
   private processing = false
 
-  constructor(claude: ClaudeService, voicevox: VoicevoxService) {
+  constructor(claude: ClaudeService, tts: TtsService) {
     super()
     this.claude = claude
-    this.voicevox = voicevox
+    this.tts = tts
     this.queue = new ChatQueue()
   }
 
@@ -36,7 +36,7 @@ export class Pipeline extends EventEmitter {
     try {
       const aiResponse = await this.claude.respond(item.userName, item.message)
 
-      const audioBuffer = await this.voicevox.synthesize(aiResponse)
+      const audioBuffer = await this.tts.synthesize(aiResponse)
       const audioBase64 = audioBuffer.toString('base64')
 
       const event: SpeechEvent = {

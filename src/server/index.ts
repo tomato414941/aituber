@@ -4,10 +4,13 @@ import websocket from '@fastify/websocket'
 import { loadConfig } from './config.js'
 import { healthRoutes } from './routes/health.js'
 import { createWsRoutes } from './routes/ws.js'
+import { createChatRoutes } from './routes/chat.js'
 import { ClaudeService } from './services/claude.js'
+import { KokoroService } from './services/kokoro.js'
 import { VoicevoxService } from './services/voicevox.js'
 import { YouTubeChatService } from './services/youtube-chat.js'
 import { Pipeline } from './services/pipeline.js'
+import type { TtsService } from './services/tts.js'
 
 const config = loadConfig()
 
@@ -17,16 +20,26 @@ await app.register(cors)
 await app.register(websocket)
 await app.register(healthRoutes)
 
+// TTS engine selection
+let tts: TtsService
+if (config.ttsEngine === 'kokoro') {
+  tts = new KokoroService(config.kokoroUrl, config.kokoroVoice)
+  app.log.info(`TTS engine: Kokoro (${config.kokoroUrl}, voice: ${config.kokoroVoice})`)
+} else {
+  tts = new VoicevoxService(config.voicevoxUrl, config.voicevoxSpeaker)
+  app.log.info(`TTS engine: VOICEVOX (${config.voicevoxUrl}, speaker: ${config.voicevoxSpeaker})`)
+}
+
 // Services
 const claude = new ClaudeService(config.anthropicApiKey, config.systemPrompt)
-const voicevox = new VoicevoxService(config.voicevoxUrl, config.voicevoxSpeaker)
-const pipeline = new Pipeline(claude, voicevox)
+const pipeline = new Pipeline(claude, tts)
 
 pipeline.on('error', (err) => {
   app.log.error(err, 'Pipeline error')
 })
 
 await app.register(createWsRoutes(pipeline))
+await app.register(createChatRoutes(pipeline))
 
 // YouTube Chat (optional: only starts if channelId is set)
 if (config.youtubeChannelId) {
@@ -48,12 +61,12 @@ if (config.youtubeChannelId) {
   app.log.info('YOUTUBE_CHANNEL_ID not set, YouTube chat disabled')
 }
 
-// VOICEVOX health check
-const voicevoxOk = await voicevox.healthCheck()
-if (voicevoxOk) {
-  app.log.info('VOICEVOX connected')
+// TTS health check
+const ttsOk = await tts.healthCheck()
+if (ttsOk) {
+  app.log.info('TTS engine connected')
 } else {
-  app.log.warn('VOICEVOX not available at ' + config.voicevoxUrl)
+  app.log.warn('TTS engine not available')
 }
 
 await app.listen({ port: config.port, host: '0.0.0.0' })
