@@ -34,9 +34,10 @@ export function Live2DCanvas({ modelPath, width, height, onModelReady }: Props) 
     }).then((model) => {
       if (destroyed) return
 
-      const scale = Math.min(width / model.width, height / model.height) * 0.8
+      // Upper body framing: scale up and shift down
+      const scale = (height / model.height) * 1.8
       model.scale.set(scale)
-      model.anchor.set(0.5, 0.5)
+      model.anchor.set(0.5, 0.35)
       model.x = width / 2
       model.y = height / 2
 
