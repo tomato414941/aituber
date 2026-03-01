@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as PIXI from 'pixi.js'
-import { Live2DModel } from 'pixi-live2d-display-lipsyncpatch'
+import { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 
 // Required by pixi-live2d-display
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,8 +36,9 @@ export function Live2DCanvas({ modelPath, width, height, onModelReady }: Props) 
 
       const scale = Math.min(width / model.width, height / model.height) * 0.8
       model.scale.set(scale)
-      model.x = (width - model.width * scale) / 2
-      model.y = (height - model.height * scale) / 2
+      model.anchor.set(0.5, 0.5)
+      model.x = width / 2
+      model.y = height / 2
 
       app.stage.addChild(model)
       onModelReady?.(model)

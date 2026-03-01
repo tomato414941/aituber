@@ -3,7 +3,7 @@ import { Live2DCanvas } from './Live2DCanvas.js'
 import { ChatOverlay } from './ChatOverlay.js'
 import { useWebSocket } from '../hooks/useWebSocket.js'
 import { useAudioPlayer } from '../hooks/useAudioPlayer.js'
-import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch'
+import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 import type { SpeechEvent } from '../../shared/types.js'
 
 interface Props {

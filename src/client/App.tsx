@@ -3,10 +3,10 @@ import { Live2DCanvas } from './components/Live2DCanvas.js'
 import { ChatOverlay } from './components/ChatOverlay.js'
 import { useWebSocket } from './hooks/useWebSocket.js'
 import { useAudioPlayer } from './hooks/useAudioPlayer.js'
-import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch'
+import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 import type { SpeechEvent } from '../shared/types.js'
 
-const MODEL_PATH = '/models/hiyori/hiyori_pro_t10.model3.json'
+const MODEL_PATH = '/models/hiyori/Hiyori.model3.json'
 
 export function App() {
   const [model, setModel] = useState<Live2DModel | null>(null)

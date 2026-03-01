@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch'
+import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 
 export function useAudioPlayer() {
   const playAudio = useCallback(
