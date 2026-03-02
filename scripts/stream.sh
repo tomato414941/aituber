@@ -14,9 +14,25 @@ fi
 # Mode: "youtube" (default) or "local" (record to file for testing)
 MODE="${1:-youtube}"
 
+USE_API=false
+BROADCAST_ID=""
+
 if [ "$MODE" = "youtube" ]; then
-  STREAM_KEY="${YOUTUBE_STREAM_KEY:?YOUTUBE_STREAM_KEY is not set in .env}"
-  RTMP_URL="rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}"
+  if [ -f "$HOME/.secrets/youtube" ]; then
+    # API mode: create broadcast automatically
+    echo "[stream] Creating YouTube broadcast via API..."
+    BROADCAST_OUTPUT=$(cd "$PROJECT_DIR" && npx tsx scripts/broadcast.ts create)
+    eval "$BROADCAST_OUTPUT"
+    RTMP_URL="rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}"
+    USE_API=true
+    echo "[stream] Broadcast: ${BROADCAST_ID}"
+    echo "[stream] Stream key obtained via API"
+  else
+    # Legacy mode: manual stream key from .env
+    STREAM_KEY="${YOUTUBE_STREAM_KEY:?YOUTUBE_STREAM_KEY is not set. Run 'pnpm youtube:auth' or set YOUTUBE_STREAM_KEY in .env}"
+    RTMP_URL="rtmp://a.rtmp.youtube.com/live2/${STREAM_KEY}"
+    echo "[stream] Using manual stream key from .env"
+  fi
 fi
 
 # Configuration
@@ -31,6 +47,11 @@ FRONTEND_URL="http://localhost:5173/stream"
 PIDS=()
 cleanup() {
   echo "[stream] Shutting down..."
+  # End broadcast via API
+  if [ "$USE_API" = "true" ] && [ -n "$BROADCAST_ID" ]; then
+    echo "[stream] Ending broadcast..."
+    cd "$PROJECT_DIR" && npx tsx scripts/broadcast.ts complete "$BROADCAST_ID" 2>/dev/null || true
+  fi
   for pid in "${PIDS[@]}"; do
     kill "$pid" 2>/dev/null || true
   done
@@ -128,6 +149,13 @@ DISPLAY="${DISPLAY_NUM}" ffmpeg -loglevel warning \
   -f flv \
   "${RTMP_URL}" &
 PIDS+=($!)
+
+# 6. Transition broadcast to live (API mode only)
+if [ "$USE_API" = "true" ]; then
+  echo "[stream] Waiting for stream to become active, then going live..."
+  cd "$PROJECT_DIR" && npx tsx scripts/broadcast.ts live "$BROADCAST_ID" &
+  PIDS+=($!)
+fi
 
 echo "[stream] Live on YouTube! Press Ctrl+C to stop."
 echo "[stream] Note: YouTube preview may take 10-30s to appear."

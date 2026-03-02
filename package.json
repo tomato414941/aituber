@@ -13,6 +13,7 @@
     "coverage": "vitest run --coverage",
     "stream": "bash scripts/stream.sh",
     "stream:local": "bash scripts/stream.sh local",
+    "youtube:auth": "tsx scripts/youtube-auth.ts",
     "prepare": "husky"
   },
   "packageManager": "pnpm@10.30.3",
@@ -28,6 +29,7 @@
     "@fastify/websocket": "^11.2.0",
     "dotenv": "^17.3.1",
     "fastify": "^5.7.4",
+    "googleapis": "^171.4.0",
     "pixi-live2d-display-lipsyncpatch": "0.5.0-ls-8",
     "pixi.js": "^7.4.3",
     "react": "^19.2.4",
