@@ -11,6 +11,8 @@
     "lint": "eslint src/",
     "test": "vitest",
     "coverage": "vitest run --coverage",
+    "stream": "bash scripts/stream.sh",
+    "stream:local": "bash scripts/stream.sh local",
     "prepare": "husky"
   },
   "packageManager": "pnpm@10.30.3",
