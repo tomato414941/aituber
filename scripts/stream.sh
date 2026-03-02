@@ -117,7 +117,9 @@ sleep 12
 # 5. ffmpeg: capture Xvfb, crop Chrome UI (top ~90px), stream to YouTube RTMP
 echo "[stream] Starting ffmpeg -> YouTube RTMP..."
 DISPLAY="${DISPLAY_NUM}" ffmpeg -loglevel warning \
+  -thread_queue_size 64 \
   -f x11grab -video_size "${XVFB_RES}" -framerate "${FPS}" -i "${DISPLAY_NUM}" \
+  -thread_queue_size 64 \
   -f pulse -i "${AUDIO_SINK}.monitor" \
   -vf "crop=1920:1080:0:90" \
   -c:v libx264 -preset veryfast -maxrate 4500k -bufsize 9000k \
@@ -128,4 +130,5 @@ DISPLAY="${DISPLAY_NUM}" ffmpeg -loglevel warning \
 PIDS+=($!)
 
 echo "[stream] Live on YouTube! Press Ctrl+C to stop."
+echo "[stream] Note: YouTube preview may take 10-30s to appear."
 wait
