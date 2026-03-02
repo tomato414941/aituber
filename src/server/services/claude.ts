@@ -21,7 +21,7 @@ export class ClaudeService {
     }
 
     const response = await this.client.messages.create({
-      model: 'claude-sonnet-4-6-20250620',
+      model: 'claude-sonnet-4-6',
       max_tokens: 300,
       system: this.systemPrompt,
       messages: this.conversationHistory,
