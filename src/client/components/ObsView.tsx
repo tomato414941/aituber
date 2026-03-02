@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Live2DCanvas } from './Live2DCanvas.js'
 import { ChatOverlay } from './ChatOverlay.js'
+import { CommentFeed, type Comment } from './CommentFeed.js'
 import { McOverlay } from './McOverlay.js'
 import { useWebSocket } from '../hooks/useWebSocket.js'
 import { useAudioPlayer } from '../hooks/useAudioPlayer.js'
 import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 import type { SpeechEvent } from '../../shared/types.js'
+
+const MAX_COMMENTS = 30
 
 // MC viewer URL injected via query param ?mc_viewer=http://...
 const params = new URLSearchParams(location.search)
@@ -18,6 +21,8 @@ interface Props {
 export function ObsView({ modelPath }: Props) {
   const [model, setModel] = useState<Live2DModel | null>(null)
   const [currentEvent, setCurrentEvent] = useState<SpeechEvent | null>(null)
+  const [comments, setComments] = useState<Comment[]>([])
+  const commentId = useRef(0)
   const { lastEvent, gameState, sendPlaybackDone } = useWebSocket(
     `ws://${location.host}/ws`,
   )
@@ -30,6 +35,18 @@ export function ObsView({ modelPath }: Props) {
   useEffect(() => {
     if (!lastEvent) return
     setCurrentEvent(lastEvent)
+
+    setComments((prev) => {
+      const next = [...prev, {
+        id: ++commentId.current,
+        userName: lastEvent.userName,
+        message: lastEvent.userMessage,
+        aiResponse: lastEvent.aiResponse,
+        timestamp: Date.now(),
+      }]
+      return next.slice(-MAX_COMMENTS)
+    })
+
     playAudio(lastEvent.audioBase64, model, () => {
       sendPlaybackDone()
     })
@@ -73,6 +90,9 @@ export function ObsView({ modelPath }: Props) {
         {/* Game state overlay (top-left) */}
         {gameState && <McOverlay state={gameState} />}
 
+        {/* Comment feed (right side) */}
+        <CommentFeed comments={comments} />
+
         {/* Chat overlay (bottom-center) */}
         {currentEvent && (
           <ChatOverlay
@@ -95,6 +115,7 @@ export function ObsView({ modelPath }: Props) {
         onModelReady={onModelReady}
       />
       {gameState && <McOverlay state={gameState} />}
+      <CommentFeed comments={comments} />
       {currentEvent && (
         <ChatOverlay
           userName={currentEvent.userName}

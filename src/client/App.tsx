@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Live2DCanvas } from './components/Live2DCanvas.js'
 import { ChatOverlay } from './components/ChatOverlay.js'
+import { CommentFeed, type Comment } from './components/CommentFeed.js'
 import { McOverlay } from './components/McOverlay.js'
 import { useWebSocket } from './hooks/useWebSocket.js'
 import { useAudioPlayer } from './hooks/useAudioPlayer.js'
@@ -8,11 +9,14 @@ import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
 import type { SpeechEvent } from '../shared/types.js'
 
 const MODEL_PATH = '/models/hiyori/Hiyori.model3.json'
+const MAX_COMMENTS = 30
 
 export function App() {
   const [model, setModel] = useState<Live2DModel | null>(null)
   const [currentEvent, setCurrentEvent] = useState<SpeechEvent | null>(null)
+  const [comments, setComments] = useState<Comment[]>([])
   const [started, setStarted] = useState(false)
+  const commentId = useRef(0)
   const { connected, lastEvent, gameState, sendPlaybackDone } = useWebSocket(
     `ws://${location.host}/ws`,
   )
@@ -25,6 +29,18 @@ export function App() {
   useEffect(() => {
     if (!lastEvent || !started) return
     setCurrentEvent(lastEvent)
+
+    setComments((prev) => {
+      const next = [...prev, {
+        id: ++commentId.current,
+        userName: lastEvent.userName,
+        message: lastEvent.userMessage,
+        aiResponse: lastEvent.aiResponse,
+        timestamp: Date.now(),
+      }]
+      return next.slice(-MAX_COMMENTS)
+    })
+
     playAudio(lastEvent.audioBase64, model, () => {
       sendPlaybackDone()
     })
@@ -74,6 +90,7 @@ export function App() {
         onModelReady={onModelReady}
       />
       {gameState && <McOverlay state={gameState} />}
+      <CommentFeed comments={comments} />
       {currentEvent && (
         <ChatOverlay
           userName={currentEvent.userName}
