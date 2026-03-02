@@ -32,7 +32,11 @@ if (config.ttsEngine === 'kokoro') {
 
 // Services
 const claude = new ClaudeService(config.anthropicApiKey, config.systemPrompt)
-const pipeline = new Pipeline(claude, tts)
+const serverAudio = process.env.SERVER_AUDIO === 'true'
+const pipeline = new Pipeline(claude, tts, serverAudio)
+if (serverAudio) {
+  app.log.info('Server-side audio playback enabled (PulseAudio)')
+}
 
 pipeline.on('error', (err) => {
   app.log.error(err, 'Pipeline error')

@@ -19,6 +19,9 @@ export function Live2DCanvas({ modelPath, width, height, onModelReady }: Props) 
   useEffect(() => {
     if (!canvasRef.current) return
 
+    // Cap FPS to 60 (Xvfb has no vsync, causing uncapped rAF)
+    PIXI.Ticker.shared.maxFPS = 60
+
     const app = new PIXI.Application({
       view: canvasRef.current,
       width,
