@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { ClaudeService } from './claude.js'
 import type { TtsService } from './tts.js'
+import type { MinecraftBridgeService } from './minecraft-bridge.js'
 import { ChatQueue } from '../queue/chat-queue.js'
 import type { SpeechEvent } from '../../shared/types.js'
 
@@ -14,6 +15,7 @@ export class Pipeline extends EventEmitter {
   private queue: ChatQueue
   private processing = false
   private serverAudio: boolean
+  private mcBridge: MinecraftBridgeService | null = null
 
   constructor(claude: ClaudeService, tts: TtsService, serverAudio = false) {
     super()
@@ -21,6 +23,10 @@ export class Pipeline extends EventEmitter {
     this.tts = tts
     this.queue = new ChatQueue()
     this.serverAudio = serverAudio
+  }
+
+  setMcBridge(bridge: MinecraftBridgeService): void {
+    this.mcBridge = bridge
   }
 
   enqueue(userName: string, message: string): void {
@@ -40,16 +46,22 @@ export class Pipeline extends EventEmitter {
     this.processing = true
 
     try {
-      const aiResponse = await this.claude.respond(item.userName, item.message)
+      const gameContext = this.mcBridge?.formatStateContext()
+      const claudeResponse = await this.claude.respond(item.userName, item.message, gameContext)
 
-      const audioBuffer = await this.tts.synthesize(aiResponse)
+      // Send game command if Claude decided to act
+      if (claudeResponse.command && this.mcBridge) {
+        this.mcBridge.sendCommand(claudeResponse.command).catch(() => {})
+      }
+
+      const audioBuffer = await this.tts.synthesize(claudeResponse.speech)
       const audioBase64 = audioBuffer.toString('base64')
 
       const event: SpeechEvent = {
         type: 'speech',
         userName: item.userName,
         userMessage: item.message,
-        aiResponse,
+        aiResponse: claudeResponse.speech,
         audioBase64,
       }
 

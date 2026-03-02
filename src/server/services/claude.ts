@@ -1,5 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk'
 
+export interface McCommandParsed {
+  action: string
+  params: Record<string, unknown>
+}
+
+export interface ClaudeResponse {
+  speech: string
+  command?: McCommandParsed
+}
+
 export class ClaudeService {
   private client: Anthropic
   private systemPrompt: string
@@ -11,7 +21,7 @@ export class ClaudeService {
     this.systemPrompt = systemPrompt
   }
 
-  async respond(userName: string, userMessage: string): Promise<string> {
+  async respond(userName: string, userMessage: string, gameContext?: string): Promise<ClaudeResponse> {
     const prompt = `${userName}さんからのコメント: ${userMessage}`
 
     this.conversationHistory.push({ role: 'user', content: prompt })
@@ -20,10 +30,16 @@ export class ClaudeService {
       this.conversationHistory = this.conversationHistory.slice(-this.maxHistory)
     }
 
+    // Build system prompt with optional game context
+    let system = this.systemPrompt
+    if (gameContext) {
+      system += `\n\n## 現在のゲーム状態\n${gameContext}`
+    }
+
     const response = await this.client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 300,
-      system: this.systemPrompt,
+      system,
       messages: this.conversationHistory,
     })
 
@@ -34,10 +50,30 @@ export class ClaudeService {
 
     this.conversationHistory.push({ role: 'assistant', content: text })
 
-    return text
+    return parseClaudeResponse(text)
   }
 
   clearHistory(): void {
     this.conversationHistory = []
   }
+}
+
+function parseClaudeResponse(text: string): ClaudeResponse {
+  // Try parsing as JSON (structured response with speech + command)
+  try {
+    let cleaned = text.trim()
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
+    }
+    const parsed = JSON.parse(cleaned)
+    if (parsed.speech) {
+      return {
+        speech: parsed.speech,
+        command: parsed.command ?? undefined,
+      }
+    }
+  } catch {
+    // Not JSON, treat as plain speech
+  }
+  return { speech: text }
 }

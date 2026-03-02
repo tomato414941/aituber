@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Live2DCanvas } from './components/Live2DCanvas.js'
 import { ChatOverlay } from './components/ChatOverlay.js'
+import { McOverlay } from './components/McOverlay.js'
 import { useWebSocket } from './hooks/useWebSocket.js'
 import { useAudioPlayer } from './hooks/useAudioPlayer.js'
 import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4'
@@ -12,7 +13,7 @@ export function App() {
   const [model, setModel] = useState<Live2DModel | null>(null)
   const [currentEvent, setCurrentEvent] = useState<SpeechEvent | null>(null)
   const [started, setStarted] = useState(false)
-  const { connected, lastEvent, sendPlaybackDone } = useWebSocket(
+  const { connected, lastEvent, gameState, sendPlaybackDone } = useWebSocket(
     `ws://${location.host}/ws`,
   )
   const { playAudio } = useAudioPlayer()
@@ -72,6 +73,7 @@ export function App() {
         height={window.innerHeight}
         onModelReady={onModelReady}
       />
+      {gameState && <McOverlay state={gameState} />}
       {currentEvent && (
         <ChatOverlay
           userName={currentEvent.userName}

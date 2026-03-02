@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { Pipeline } from '../services/pipeline.js'
-import type { WsClientMessage } from '../../shared/types.js'
+import type { WsClientMessage, GameStateEvent } from '../../shared/types.js'
 
 export function createWsRoutes(pipeline: Pipeline): FastifyPluginAsync {
   return async (app) => {
@@ -11,6 +11,12 @@ export function createWsRoutes(pipeline: Pipeline): FastifyPluginAsync {
         socket.send(JSON.stringify(event))
       }
       pipeline.on('speech', onSpeech)
+
+      const onGameState = (state: unknown) => {
+        const event: GameStateEvent = { type: 'game_state', state: state as GameStateEvent['state'] }
+        socket.send(JSON.stringify(event))
+      }
+      pipeline.on('game-state', onGameState)
 
       socket.on('message', (raw: Buffer) => {
         try {
@@ -25,6 +31,7 @@ export function createWsRoutes(pipeline: Pipeline): FastifyPluginAsync {
 
       socket.on('close', () => {
         pipeline.off('speech', onSpeech)
+        pipeline.off('game-state', onGameState)
       })
     })
   }

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { SpeechEvent } from '../../shared/types.js'
+import type { SpeechEvent, McGameState } from '../../shared/types.js'
 
 export function useWebSocket(url: string) {
   const wsRef = useRef<WebSocket | null>(null)
   const [connected, setConnected] = useState(false)
   const [lastEvent, setLastEvent] = useState<SpeechEvent | null>(null)
+  const [gameState, setGameState] = useState<McGameState | null>(null)
 
   useEffect(() => {
     let reconnectTimer: ReturnType<typeof setTimeout>
@@ -22,6 +23,8 @@ export function useWebSocket(url: string) {
         const data = JSON.parse(e.data)
         if (data.type === 'speech') {
           setLastEvent(data as SpeechEvent)
+        } else if (data.type === 'game_state') {
+          setGameState(data.state as McGameState)
         }
       }
     }
@@ -38,5 +41,5 @@ export function useWebSocket(url: string) {
     wsRef.current?.send(JSON.stringify({ type: 'playback_done' }))
   }, [])
 
-  return { connected, lastEvent, sendPlaybackDone }
+  return { connected, lastEvent, gameState, sendPlaybackDone }
 }

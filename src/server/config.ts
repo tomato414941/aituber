@@ -12,6 +12,9 @@ export function loadConfig() {
     // VOICEVOX
     voicevoxUrl: process.env.VOICEVOX_URL || 'http://localhost:50021',
     voicevoxSpeaker: parseInt(process.env.VOICEVOX_SPEAKER || '1', 10),
+    // Minecraft integration
+    mcBotUrl: process.env.MC_BOT_URL || '',
+    mcViewerUrl: process.env.MC_VIEWER_URL || 'http://localhost:3000',
     // Character
     systemPrompt:
       process.env.SYSTEM_PROMPT ||
